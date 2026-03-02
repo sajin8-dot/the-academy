@@ -1,0 +1,5 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>
+  <rect width='512' height='512' fill='#1A1A1A'/>
+  <text x='50%' y='48%' font-family='Georgia, serif' font-size='195' font-weight='bold' fill='#FAFAF7' text-anchor='middle' dominant-baseline='middle'>D</text>
+  <line x1='76.8' y1='368.64' x2='435.2' y2='368.64' stroke='#B5872A' stroke-width='12.8'/>
+</svg>
