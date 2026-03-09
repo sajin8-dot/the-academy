@@ -63,6 +63,12 @@ Finally, we hit the ground.
 
 ---
 
+## The Interactive Piano Roll
+
+[VISUAL_PLAYER]
+
+---
+
 ## The Full Bridge: Ear-to-Hand-to-Eye
 
 Now, and *only* now, look at what you just played. This is how the world writes down the feeling you just had.

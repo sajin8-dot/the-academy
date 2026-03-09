@@ -1,3 +1,4 @@
+import VisualMidiPlayer from '@/components/VisualMidiPlayer';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Image from 'next/image';
@@ -61,7 +62,7 @@ export default async function ArticlePage({ params }: Props) {
     .replace(/\[ON SUCCESS:[\s\S]+?\]/g, '')
     .replace(/\[ON FAILURE:[\s\S]+?\]/g, '');
 
-  const componentRegex = /(?:<p>)?\[(SHEET_MUSIC|PLAY MIDI):\s*([^\]]+)\](?:<\/p>)?/g;
+  const componentRegex = /(?:<p>)?\[(SHEET_MUSIC|PLAY MIDI|VISUAL_PLAYER):?\s*([^\]]*)\](?:<\/p>)?/g;
   const parts = cleanedHtml.split(componentRegex);
   const renderedContent = [];
 
@@ -83,6 +84,8 @@ export default async function ArticlePage({ params }: Props) {
         const match = paramsStr.match(/sequence=(.+?)(?:,\s*[a-z]+?=|$)/);
         const sequenceRaw = match ? match[1].trim() : '';
         renderedContent.push(<PlayMidi key={`pm-${i}`} sequence={sequenceRaw} />);
+      } else if (type === 'VISUAL_PLAYER') {
+        renderedContent.push(<VisualMidiPlayer key={`vp-${i}`} />);
       }
     }
   }
