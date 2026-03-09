@@ -1,6 +1,6 @@
 ---
 title: "Lesson 1: Fitness Fundamentals"
-slug: "fitness-lesson-1"
+slug: "lesson-1"
 author: "Django"
 authorRole: "Fitness Coach"
 date: "2026-03-02"

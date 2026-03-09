@@ -13,6 +13,7 @@ export type ArticleMode = 'story' | 'concept' | 'companies' | 'technical';
 
 export interface Article {
   slug: string;
+  course?: string;
   title: string;
   author: string;
   authorRole: string;

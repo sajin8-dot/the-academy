@@ -1,6 +1,6 @@
 ---
 title: "Lesson 1: The Basics of Credit Cards"
-slug: "credit-cards-lesson-1"
+slug: "lesson-1"
 author: "Hanks"
 authorRole: "Finance Expert"
 date: "2026-03-03"

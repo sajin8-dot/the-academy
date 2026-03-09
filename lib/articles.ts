@@ -37,11 +37,14 @@ export function getAllArticles(): Article[] {
   const articles = filePaths.map((fullPath) => {
     const fileName = path.basename(fullPath);
     const slug = fileName.replace(/\.md$/, '');
+    // Extract course from folder name (e.g., src/content/courses/credit-cards/lesson-1.md -> credit-cards)
+    const course = path.dirname(fullPath).split(path.sep).pop() || '';
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data } = matter(fileContents);
 
     return {
       slug: data.slug || slug,
+      course,
       title: data.title || '',
       author: data.author || '',
       authorRole: data.authorRole || '',
@@ -67,6 +70,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 
   for (const fullPath of filePaths) {
     const fileName = path.basename(fullPath);
+    const course = path.dirname(fullPath).split(path.sep).pop() || '';
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data, content } = matter(fileContents);
 
@@ -78,6 +82,47 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 
     return {
       slug: fileSlug,
+      course,
+      title: data.title || '',
+      author: data.author || '',
+      authorRole: data.authorRole || '',
+      date: data.date || '',
+      mode: data.mode || 'story',
+      tags: data.tags || [],
+      source: data.source || '',
+      excerpt: data.excerpt || '',
+      starred: data.starred || false,
+      heroImage: data.heroImage || null,
+      content,
+      contentHtml,
+    };
+  }
+
+  return null;
+}
+
+export async function getArticleByCourseAndLesson(course: string, lesson: string): Promise<Article | null> {
+  if (!fs.existsSync(coursesDir)) return null;
+
+  const courseDir = path.join(coursesDir, course);
+  if (!fs.existsSync(courseDir)) return null;
+
+  const filePaths = walkDir(courseDir);
+
+  for (const fullPath of filePaths) {
+    const fileName = path.basename(fullPath);
+    const fileContents = fs.readFileSync(fullPath, 'utf8');
+    const { data, content } = matter(fileContents);
+
+    const fileSlug = data.slug || fileName.replace(/\.md$/, '');
+    if (fileSlug !== lesson) continue;
+
+    const processedContent = await remark().use(html).process(content);
+    const contentHtml = processedContent.toString();
+
+    return {
+      slug: fileSlug,
+      course,
       title: data.title || '',
       author: data.author || '',
       authorRole: data.authorRole || '',

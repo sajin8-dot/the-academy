@@ -42,7 +42,7 @@ export default function ArticleCard({
             </div>
 
             {/* Featured headline */}
-            <Link href={`/article/${article.slug}`}>
+            <Link href={`/article/${article.course || 'unknown'}/${article.slug}`}>
               <h2
                 className="headline-display headline-featured mb-3"
                 style={{
@@ -90,7 +90,7 @@ export default function ArticleCard({
     <div className="article-card fade-in">
       {/* Thumbnail image */}
       {article.heroImage && (
-        <Link href={`/article/${article.slug}`}>
+        <Link href={`/article/${article.course || 'unknown'}/${article.slug}`}>
           <div
             style={{
               position: 'relative',
@@ -119,7 +119,7 @@ export default function ArticleCard({
         <StarButton slug={article.slug} />
       </div>
 
-      <Link href={`/article/${article.slug}`}>
+      <Link href={`/article/${article.course || 'unknown'}/${article.slug}`}>
         <h3
           className="headline-display mb-2"
           style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.45rem)', lineHeight: 1.2 }}

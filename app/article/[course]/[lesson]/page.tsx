@@ -2,20 +2,23 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getAllArticles, getArticleBySlug, formatDate } from '@/lib/articles';
+import { getAllArticles, getArticleByCourseAndLesson, formatDate } from '@/lib/articles';
 import StarButton from '@/components/StarButton';
 
 interface Props {
-  params: { slug: string };
+  params: { course: string; lesson: string };
 }
 
 export async function generateStaticParams() {
   const articles = getAllArticles();
-  return articles.map((a) => ({ slug: a.slug }));
+  return articles.map((a) => ({ 
+    course: a.course || 'unknown', 
+    lesson: a.slug 
+  }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = await getArticleBySlug(params.slug);
+  const article = await getArticleByCourseAndLesson(params.course, params.lesson);
   if (!article) return { title: 'Not Found' };
   return {
     title: article.title,
@@ -32,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ArticlePage({ params }: Props) {
-  const article = await getArticleBySlug(params.slug);
+  const article = await getArticleByCourseAndLesson(params.course, params.lesson);
   if (!article) notFound();
 
   return (
