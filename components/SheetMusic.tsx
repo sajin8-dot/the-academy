@@ -13,33 +13,42 @@ const SheetMusic: React.FC<SheetMusicProps> = ({ notes }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clear previous rendering by resetting width/height
-    const canvas = containerRef.current;
-    canvas.width = 400;
-    canvas.height = 150;
+    try {
+      // Clear previous rendering by resetting width/height
+      const canvas = containerRef.current;
+      canvas.width = 400;
+      canvas.height = 150;
 
-    const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
-    renderer.resize(400, 150);
-    const context = renderer.getContext();
-    context.clear();
+      const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
+      renderer.resize(400, 150);
+      const context = renderer.getContext();
+      context.clear();
 
-    const stave = new Stave(10, 40, 350);
-    stave.addClef('treble').addTimeSignature('4/4');
-    stave.setContext(context).draw();
+      const stave = new Stave(10, 40, 350);
+      stave.addClef('treble').addTimeSignature('4/4');
+      stave.setContext(context).draw();
 
-    const processedNotes = notes.split(',').map((n) => {
-      const [key, duration] = n.trim().split('/');
-      return new StaveNote({
-        keys: [key.replace(/(\d)$/, '/$1')],
-        duration: duration || 'q',
+      const processedNotes = notes.split(',').map((n) => {
+        const parts = n.trim().split('/');
+        const key = parts[0] || 'C4';
+        const duration = parts[1] || 'q';
+        
+        return new StaveNote({
+          keys: [key.includes('/') ? key : key.replace(/(\d)$/, '/$1')],
+          duration: duration,
+        });
       });
-    });
 
-    const voice = new Voice({ numBeats: 4, beatValue: 4 });
-    voice.addTickables(processedNotes);
+      // Calculate beats safety check
+      const voice = new Voice({ numBeats: 4, beatValue: 4 });
+      voice.setStrict(false); // Don't crash if notes don't add up perfectly to 4/4
+      voice.addTickables(processedNotes);
 
-    new Formatter().joinVoices([voice]).format([voice], 300);
-    voice.draw(context, stave);
+      new Formatter().joinVoices([voice]).format([voice], 300);
+      voice.draw(context, stave);
+    } catch (e) {
+      console.error("VexFlow rendering failed", e);
+    }
   }, [notes]);
 
   return (
