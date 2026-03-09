@@ -45,18 +45,20 @@ export default function MidiController({ content }: MidiControllerProps) {
     const awaitMatch = content.match(/\[AWAIT MIDI: ([^\]]+)\]/);
     if (awaitMatch) {
       const paramsStr = awaitMatch[1];
-      const params: any = {};
+      const params: { [key: string]: any } = {};
       
       paramsStr.split(',').forEach(param => {
         const parts = param.split('=');
         if (parts.length === 2) {
           const key = parts[0].trim();
-          const value = parts[1].trim().replace(/['"]/g, '');
+          let value = parts[1].trim().replace(/^['"]|['"]$/g, '');
+          
           if (key === 'sequence') {
             try {
-              params[key] = JSON.parse(value.replace(/'/g, '"'));
+              const jsonValue = value.replace(/'/g, '"');
+              params[key] = JSON.parse(jsonValue);
             } catch(e) {
-              params[key] = [value];
+              params[key] = value.replace(/[\[\]]/g, '').split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
             }
           } else {
             params[key] = value;
@@ -73,6 +75,8 @@ export default function MidiController({ content }: MidiControllerProps) {
         onSuccess: successMatch ? successMatch[1] : undefined,
         onFailure: failureMatch ? failureMatch[1] : undefined,
       });
+    } else {
+      setActiveTask(null);
     }
 
     // 2. SHEET_MUSIC parser
@@ -157,7 +161,7 @@ export default function MidiController({ content }: MidiControllerProps) {
   useEffect(() => {
     if (status === 'ready' && WebMidi.inputs.length > 0) {
       const input = WebMidi.inputs[0];
-      input.addListener('noteon', handleMidiInput);
+      if (input && input.addListener) { input.addListener('noteon', handleMidiInput); }
       return () => {
         input.removeListener('noteon');
       };
