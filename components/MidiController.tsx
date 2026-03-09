@@ -88,8 +88,8 @@ export default function MidiController({ content }: MidiControllerProps) {
   }, [content]);
 
   // Expose a function to initialize the drone
-  useEffect(() => {
-    const handleStartDrone = async () => {
+  const handleStartDrone = useCallback(async () => {
+    try {
       await Tone.start();
       if (!synthRef.current) {
         synthRef.current = new Tone.Synth({
@@ -102,34 +102,35 @@ export default function MidiController({ content }: MidiControllerProps) {
         // Find frequency
         const droneMatch = content.match(/\[START DRONE: frequency=([^,]+)/);
         const freq = droneMatch ? parseFloat(droneMatch[1]) : 261.63;
-        synthRef.current.triggerAttack(freq);
-        dronePlaying.current = true;
+        if (!isNaN(freq)) {
+          synthRef.current.triggerAttack(freq);
+          dronePlaying.current = true;
+        }
       }
-    };
+    } catch (e) {
+      console.error("Drone failed to start", e);
+    }
+  }, [content]);
 
-    const handleStopDrone = () => {
-      if (synthRef.current && dronePlaying.current) {
-        synthRef.current.triggerRelease();
-        dronePlaying.current = false;
-      }
-    };
+  const handleStopDrone = useCallback(() => {
+    if (synthRef.current && dronePlaying.current) {
+      synthRef.current.triggerRelease();
+      dronePlaying.current = false;
+    }
+  }, []);
 
+  useEffect(() => {
     // Attach to window so user can click to start (Tone.js requires user gesture)
     (window as any).startToneDrone = handleStartDrone;
     (window as any).stopToneDrone = handleStopDrone;
-
-    // Check for fade drone tag
-    if (content.match(/\[FADE DRONE:/)) {
-      // Auto-stop just as a demonstration, though in reality it might be tied to an event
-      // handleStopDrone();
-    }
     
     return () => {
       if (synthRef.current) {
         synthRef.current.dispose();
+        synthRef.current = null;
       }
     };
-  }, [content]);
+  }, [handleStartDrone, handleStopDrone]);
 
   const handleMidiInput = useCallback((e: NoteMessageEvent) => {
     if (!activeTask) return;
@@ -170,6 +171,27 @@ export default function MidiController({ content }: MidiControllerProps) {
 
   if (status === 'disabled') return null;
 
+  const handlePlayNotes = useCallback(async (notes: string[]) => {
+    try {
+      await Tone.start();
+      const piano = new Tone.Sampler({
+        urls: {
+          A1: "A1.mp3",
+          A2: "A2.mp3",
+        },
+        baseUrl: "https://tonejs.github.io/audio/salamander/",
+      }).toDestination();
+
+      await Tone.loaded();
+      const now = Tone.now();
+      notes.forEach((note, i) => {
+        piano.triggerAttackRelease(note, "4n", now + i * 0.5);
+      });
+    } catch (e) {
+      console.error("Playback failed", e);
+    }
+  }, []);
+
   return (
     <>
       {/* Visual rendering of sheet music if detected */}
@@ -200,9 +222,19 @@ export default function MidiController({ content }: MidiControllerProps) {
 
         {activeTask && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-zinc-800">
-              Waiting for: <code className="bg-zinc-100 px-1 rounded">{activeTask.target || activeTask.sequence?.join(', ')}</code>
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-zinc-800">
+                Waiting for: <code className="bg-zinc-100 px-1 rounded">{activeTask.target || activeTask.sequence?.join(', ')}</code>
+              </p>
+              {activeTask.sequence && (
+                <button 
+                  onClick={() => handlePlayNotes(activeTask.sequence!)}
+                  className="text-[10px] bg-gold-100 text-gold-700 px-2 py-0.5 rounded border border-gold-200"
+                >
+                  Play Hint
+                </button>
+              )}
+            </div>
             {feedback && (
               <p className={`mt-2 text-xs font-serif italic ${feedback === 'Success!' ? 'text-gold-600' : 'text-zinc-500'}`}>
                 {feedback}
