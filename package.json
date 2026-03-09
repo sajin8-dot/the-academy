@@ -9,8 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@magenta/music": "^1.23.1",
+    "@tonejs/midi": "^2.0.28",
     "date-fns": "^3.6.0",
     "gray-matter": "^4.0.3",
+    "html-midi-player": "^1.6.0",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",

@@ -6,6 +6,7 @@ import { getAllArticles, getArticleByCourseAndLesson, formatDate } from '@/lib/a
 import StarButton from '@/components/StarButton';
 import MidiController from '@/components/MidiController';
 import SheetMusic from '@/components/SheetMusic';
+import PlayMidi from '@/components/PlayMidi';
 
 interface Props {
   params: { course: string; lesson: string };
@@ -40,23 +41,49 @@ export default async function ArticlePage({ params }: Props) {
   const article = await getArticleByCourseAndLesson(params.course, params.lesson);
   if (!article) notFound();
 
-  // Handle Sheet Music Tags in body
-  const contentHtml = article.contentHtml || '';
-  const sheetMusicRegex = /\[SHEET_MUSIC:\s*notes="([^"]+)"\]/g;
-  
-  // First, remove any <p> tags that might be wrapping our custom tag
-  const cleanedHtml = contentHtml.replace(/<p>(\[SHEET_MUSIC:\s*notes="[^"]+"\])<\/p>/g, '$1');
-  
-  const parts = cleanedHtml.split(sheetMusicRegex);
+  // Fix nested array brackets for simpler parsing
+  let contentHtml = article.contentHtml || '';
+  contentHtml = contentHtml.replace(/sequence=\[([^\]]+)\]/g, 'sequence=$1');
+
+  // Hide internal workflow tags from the rendered text
+  let cleanedHtml = contentHtml
+    .replace(/<p>(\[AWAIT MIDI:[\s\S]+?\])<\/p>/g, '')
+    .replace(/<p>(\[START DRONE:[\s\S]+?\])<\/p>/g, '')
+    .replace(/<p>(\[FADE DRONE:[\s\S]+?\])<\/p>/g, '')
+    .replace(/<p>(\[ON SUCCESS:[\s\S]+?\])<\/p>/g, '')
+    .replace(/<p>(\[ON FAILURE:[\s\S]+?\])<\/p>/g, '');
+    
+  // Fallback if they weren't wrapped in <p>
+  cleanedHtml = cleanedHtml
+    .replace(/\[AWAIT MIDI:[\s\S]+?\]/g, '')
+    .replace(/\[START DRONE:[\s\S]+?\]/g, '')
+    .replace(/\[FADE DRONE:[\s\S]+?\]/g, '')
+    .replace(/\[ON SUCCESS:[\s\S]+?\]/g, '')
+    .replace(/\[ON FAILURE:[\s\S]+?\]/g, '');
+
+  const componentRegex = /(?:<p>)?\[(SHEET_MUSIC|PLAY MIDI):\s*([^\]]+)\](?:<\/p>)?/g;
+  const parts = cleanedHtml.split(componentRegex);
   const renderedContent = [];
 
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 0) {
-      if (parts[i].trim()) {
-        renderedContent.push(<div key={i} dangerouslySetInnerHTML={{ __html: parts[i] }} />);
+  for (let i = 0; i < parts.length; i += 3) {
+    const text = parts[i];
+    if (text && text.trim()) {
+      renderedContent.push(<div key={`text-${i}`} dangerouslySetInnerHTML={{ __html: text }} />);
+    }
+
+    if (i + 1 < parts.length) {
+      const type = parts[i + 1];
+      const paramsStr = parts[i + 2];
+
+      if (type === 'SHEET_MUSIC') {
+        const match = paramsStr.match(/notes="([^"]+)"/);
+        const notes = match ? match[1] : '';
+        renderedContent.push(<SheetMusic key={`sm-${i}`} notes={notes} />);
+      } else if (type === 'PLAY MIDI') {
+        const match = paramsStr.match(/sequence=(.+?)(?:,\s*[a-z]+?=|$)/);
+        const sequenceRaw = match ? match[1].trim() : '';
+        renderedContent.push(<PlayMidi key={`pm-${i}`} sequence={sequenceRaw} />);
       }
-    } else {
-      renderedContent.push(<SheetMusic key={`sm-${i}`} notes={parts[i]} />);
     }
   }
 
