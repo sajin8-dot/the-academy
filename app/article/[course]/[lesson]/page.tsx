@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getAllArticles, getArticleByCourseAndLesson, formatDate } from '@/lib/articles';
 import StarButton from '@/components/StarButton';
+import MidiController from '@/components/MidiController';
 
 interface Props {
   params: { course: string; lesson: string };
@@ -142,6 +143,10 @@ export default async function ArticlePage({ params }: Props) {
           className="article-body mx-auto"
           dangerouslySetInnerHTML={{ __html: article.contentHtml || '' }}
         />
+
+        {article.mode === 'piano' && (
+          <MidiController content={article.content || ''} />
+        )}
 
         {/* Bottom tags */}
         <div

@@ -9,7 +9,7 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export type ArticleMode = 'story' | 'concept' | 'companies' | 'technical';
+export type ArticleMode = 'story' | 'concept' | 'companies' | 'technical' | 'piano';
 
 export interface Article {
   slug: string;
