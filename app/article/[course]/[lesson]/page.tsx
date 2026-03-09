@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getAllArticles, getArticleByCourseAndLesson, formatDate } from '@/lib/articles';
 import StarButton from '@/components/StarButton';
 import MidiController from '@/components/MidiController';
+import SheetMusic from '@/components/SheetMusic';
 
 interface Props {
   params: { course: string; lesson: string };
@@ -38,6 +39,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ArticlePage({ params }: Props) {
   const article = await getArticleByCourseAndLesson(params.course, params.lesson);
   if (!article) notFound();
+
+  // Handle Sheet Music Tags in body
+  const contentHtml = article.contentHtml || '';
+  const sheetMusicRegex = /\[SHEET_MUSIC:\s*notes="([^"]+)"\]/g;
+  const parts = contentHtml.split(sheetMusicRegex);
+  const renderedContent = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      renderedContent.push(<div key={i} dangerouslySetInnerHTML={{ __html: parts[i] }} />);
+    } else {
+      renderedContent.push(<SheetMusic key={i} notes={parts[i]} />);
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -139,10 +154,9 @@ export default async function ArticlePage({ params }: Props) {
         </p>
 
         {/* Article body */}
-        <div
-          className="article-body mx-auto"
-          dangerouslySetInnerHTML={{ __html: article.contentHtml || '' }}
-        />
+        <div className="article-body mx-auto">
+          {renderedContent}
+        </div>
 
         {article.mode === 'piano' && (
           <MidiController content={article.content || ''} />
