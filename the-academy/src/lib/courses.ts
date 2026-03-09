@@ -59,4 +59,26 @@ Credit cards are more than just pieces of plastic—they are short-term loans is
   ],
 };
 
-export const courses = [creditCardsCourse];
+export const pianoBasicsCourse: Course = {
+  title: "Piano Basics",
+  description: "Learn the fundamentals of piano playing.",
+  lessons: [
+    {
+      title: "Lesson 1: Three-Note Walk",
+      summary: "Introduction to the first three notes on the keyboard.",
+      slug: "piano-basics-lesson-1",
+      content: `## Lesson 1: Three-Note Walk
+
+In this lesson, we will learn our first three notes: C, D, and E.
+
+[APP ACTION:PianoMidiEngine]
+
+Try playing C4, D4, and E4 on your MIDI keyboard.
+
+[SHEET_MUSIC: notes="C4/q, D4/q, E4/h"]`,
+    },
+  ],
+};
+
+export const courses = [creditCardsCourse, pianoBasicsCourse];
+
