@@ -70,6 +70,8 @@ Now that you've found the center, let's explore the immediate neighborhood. Do t
 [ON SUCCESS: BLOOM intensity=high, color="green"]
 [ON FAILURE: feedback="The steps are even, like a heartbeat. If you're lost, find Home (the Tonic) and start the climb again."]
 
+[SHEET_MUSIC: notes="C4/q, D4/q, E4/h"]
+
 ---
 
 ## Cobain's Reflection

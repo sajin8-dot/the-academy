@@ -8,17 +8,20 @@ interface SheetMusicProps {
 }
 
 const SheetMusic: React.FC<SheetMusicProps> = ({ notes }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clear previous rendering
-    containerRef.current.innerHTML = '';
+    // Clear previous rendering by resetting width/height
+    const canvas = containerRef.current;
+    canvas.width = 400;
+    canvas.height = 150;
 
-    const renderer = new Renderer(containerRef.current, Renderer.Backends.SVG);
+    const renderer = new Renderer(canvas, Renderer.Backends.CANVAS);
     renderer.resize(400, 150);
     const context = renderer.getContext();
+    context.clear();
 
     const stave = new Stave(10, 40, 350);
     stave.addClef('treble').addTimeSignature('4/4');
@@ -41,7 +44,9 @@ const SheetMusic: React.FC<SheetMusicProps> = ({ notes }) => {
 
   return (
     <div className="sheet-music-container my-8 p-4 bg-white border border-gray-200 rounded shadow-sm">
-      <div ref={containerRef} className="flex justify-center" />
+      <div className="flex justify-center">
+        <canvas ref={containerRef} id="SHEET_MUSIC" />
+      </div>
       <p className="text-center text-xs text-gray-400 mt-2 italic font-serif">Ear-to-Hand-to-Eye Bridge</p>
     </div>
   );

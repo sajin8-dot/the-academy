@@ -43,14 +43,20 @@ export default async function ArticlePage({ params }: Props) {
   // Handle Sheet Music Tags in body
   const contentHtml = article.contentHtml || '';
   const sheetMusicRegex = /\[SHEET_MUSIC:\s*notes="([^"]+)"\]/g;
-  const parts = contentHtml.split(sheetMusicRegex);
+  
+  // First, remove any <p> tags that might be wrapping our custom tag
+  const cleanedHtml = contentHtml.replace(/<p>(\[SHEET_MUSIC:\s*notes="[^"]+"\])<\/p>/g, '$1');
+  
+  const parts = cleanedHtml.split(sheetMusicRegex);
   const renderedContent = [];
 
   for (let i = 0; i < parts.length; i++) {
     if (i % 2 === 0) {
-      renderedContent.push(<div key={i} dangerouslySetInnerHTML={{ __html: parts[i] }} />);
+      if (parts[i].trim()) {
+        renderedContent.push(<div key={i} dangerouslySetInnerHTML={{ __html: parts[i] }} />);
+      }
     } else {
-      renderedContent.push(<SheetMusic key={i} notes={parts[i]} />);
+      renderedContent.push(<SheetMusic key={`sm-${i}`} notes={parts[i]} />);
     }
   }
 

@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { WebMidi, Input, NoteMessageEvent } from 'webmidi';
+import * as Tone from 'tone';
+import SheetMusic from './SheetMusic';
 
 interface MidiControllerProps {
   content: string;
@@ -10,13 +12,17 @@ interface MidiControllerProps {
 export default function MidiController({ content }: MidiControllerProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'disabled'>('loading');
   const [activeTask, setActiveTask] = useState<{
-    target: string;
+    target?: string;
     sequence?: string[];
     onSuccess?: string;
     onFailure?: string;
   } | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [bloom, setBloom] = useState<{ intensity: string; color: string } | null>(null);
+  const [sheetNotes, setSheetNotes] = useState<string | null>(null);
+
+  const synthRef = useRef<Tone.Synth | null>(null);
+  const dronePlaying = useRef(false);
 
   useEffect(() => {
     WebMidi.enable()
@@ -34,28 +40,30 @@ export default function MidiController({ content }: MidiControllerProps) {
     };
   }, []);
 
-  // Simple parser for [AWAIT MIDI] tags
   useEffect(() => {
+    // 1. AWAIT MIDI parser
     const awaitMatch = content.match(/\[AWAIT MIDI: ([^\]]+)\]/);
     if (awaitMatch) {
       const paramsStr = awaitMatch[1];
       const params: any = {};
       
-      // Basic key-value parser for the tag
       paramsStr.split(',').forEach(param => {
-        const [key, value] = param.split('=').map(s => s.trim().replace(/['"]/g, ''));
-        if (key === 'sequence') {
+        const parts = param.split('=');
+        if (parts.length === 2) {
+          const key = parts[0].trim();
+          const value = parts[1].trim().replace(/['"]/g, '');
+          if (key === 'sequence') {
             try {
-                params[key] = JSON.parse(value.replace(/'/g, '"'));
+              params[key] = JSON.parse(value.replace(/'/g, '"'));
             } catch(e) {
-                params[key] = [value];
+              params[key] = [value];
             }
-        } else {
+          } else {
             params[key] = value;
+          }
         }
       });
 
-      // Look for ON SUCCESS / ON FAILURE siblings
       const successMatch = content.match(/\[ON SUCCESS: ([^\]]+)\]/);
       const failureMatch = content.match(/\[ON FAILURE: ([^\]]+)\]/);
 
@@ -66,6 +74,57 @@ export default function MidiController({ content }: MidiControllerProps) {
         onFailure: failureMatch ? failureMatch[1] : undefined,
       });
     }
+
+    // 2. SHEET_MUSIC parser
+    const sheetMatch = content.match(/\[SHEET_MUSIC: notes="([^"]+)"\]/);
+    if (sheetMatch) {
+      setSheetNotes(sheetMatch[1]);
+    }
+
+  }, [content]);
+
+  // Expose a function to initialize the drone
+  useEffect(() => {
+    const handleStartDrone = async () => {
+      await Tone.start();
+      if (!synthRef.current) {
+        synthRef.current = new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 2, decay: 0, sustain: 1, release: 5 }
+        }).toDestination();
+      }
+
+      if (!dronePlaying.current) {
+        // Find frequency
+        const droneMatch = content.match(/\[START DRONE: frequency=([^,]+)/);
+        const freq = droneMatch ? parseFloat(droneMatch[1]) : 261.63;
+        synthRef.current.triggerAttack(freq);
+        dronePlaying.current = true;
+      }
+    };
+
+    const handleStopDrone = () => {
+      if (synthRef.current && dronePlaying.current) {
+        synthRef.current.triggerRelease();
+        dronePlaying.current = false;
+      }
+    };
+
+    // Attach to window so user can click to start (Tone.js requires user gesture)
+    (window as any).startToneDrone = handleStartDrone;
+    (window as any).stopToneDrone = handleStopDrone;
+
+    // Check for fade drone tag
+    if (content.match(/\[FADE DRONE:/)) {
+      // Auto-stop just as a demonstration, though in reality it might be tied to an event
+      // handleStopDrone();
+    }
+    
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.dispose();
+      }
+    };
   }, [content]);
 
   const handleMidiInput = useCallback((e: NoteMessageEvent) => {
@@ -108,37 +167,57 @@ export default function MidiController({ content }: MidiControllerProps) {
   if (status === 'disabled') return null;
 
   return (
-    <div className="fixed bottom-4 right-4 p-4 bg-white/80 backdrop-blur border border-zinc-200 shadow-xl rounded-lg max-w-sm z-50">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-2 h-2 rounded-full ${status === 'ready' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-        <span className="text-xs font-mono uppercase tracking-widest text-zinc-500">
-          MIDI Engine: {status}
-        </span>
-      </div>
-      
-      {activeTask && (
-        <div className="mt-4">
-          <p className="text-sm font-medium text-zinc-800">
-            Waiting for: <code className="bg-zinc-100 px-1 rounded">{activeTask.target || activeTask.sequence?.join(', ')}</code>
-          </p>
-          {feedback && (
-            <p className={`mt-2 text-xs font-serif italic ${feedback === 'Success!' ? 'text-gold-600' : 'text-zinc-500'}`}>
-              {feedback}
-            </p>
-          )}
+    <>
+      {/* Visual rendering of sheet music if detected */}
+      {sheetNotes && <SheetMusic notes={sheetNotes} />}
+
+      <div className="fixed bottom-4 right-4 p-4 bg-white/80 backdrop-blur border border-zinc-200 shadow-xl rounded-lg max-w-sm z-50">
+        <div className="flex items-center gap-2 mb-2">
+          <div className={`w-2 h-2 rounded-full ${status === 'ready' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+          <span className="text-xs font-mono uppercase tracking-widest text-zinc-500">
+            MIDI Engine: {status}
+          </span>
         </div>
-      )}
+        
+        <div className="mb-2">
+          <button 
+            onClick={() => (window as any).startToneDrone?.()} 
+            className="text-xs bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-2 py-1 rounded mr-2"
+          >
+            Start Drone
+          </button>
+          <button 
+            onClick={() => (window as any).stopToneDrone?.()} 
+            className="text-xs bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-2 py-1 rounded"
+          >
+            Stop Drone
+          </button>
+        </div>
 
-      {bloom && (
-        <div 
-          className="absolute -top-2 -left-2 w-4 h-4 rounded-full animate-ping"
-          style={{ backgroundColor: bloom.color }}
-        />
-      )}
+        {activeTask && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-zinc-800">
+              Waiting for: <code className="bg-zinc-100 px-1 rounded">{activeTask.target || activeTask.sequence?.join(', ')}</code>
+            </p>
+            {feedback && (
+              <p className={`mt-2 text-xs font-serif italic ${feedback === 'Success!' ? 'text-gold-600' : 'text-zinc-500'}`}>
+                {feedback}
+              </p>
+            )}
+          </div>
+        )}
 
-      {status === 'ready' && WebMidi.inputs.length === 0 && (
-        <p className="mt-2 text-[10px] text-zinc-400">Connect a MIDI device to interact.</p>
-      )}
-    </div>
+        {bloom && (
+          <div 
+            className="absolute -top-2 -left-2 w-4 h-4 rounded-full animate-ping"
+            style={{ backgroundColor: bloom.color }}
+          />
+        )}
+
+        {status === 'ready' && WebMidi.inputs.length === 0 && (
+          <p className="mt-2 text-[10px] text-zinc-400">Connect a MIDI device to interact.</p>
+        )}
+      </div>
+    </>
   );
 }
