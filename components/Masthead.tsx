@@ -78,10 +78,9 @@ export default function Masthead() {
       <div className="text-center py-4">
         <Link href="/" className="headline-display" style={{ textDecoration: 'none' }}>
           <h1
+            className="headline-display"
             style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 'clamp(2.8rem, 8vw, 5.5rem)',
-              fontWeight: 800,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: 'var(--ink)',

@@ -15,6 +15,7 @@ module.exports = {
         darktext: '#F5F0E8',
       },
       fontFamily: {
+        chewy: ['Chewy', 'system-ui', 'sans-serif'],
         playfair: ['Playfair Display', 'Georgia', 'serif'],
         serif: ['Source Serif 4', 'Georgia', 'serif'],
         sans: ['system-ui', '-apple-system', 'sans-serif'],

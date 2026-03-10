@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from 'next';
+import { Chewy } from 'next/font/google';
 import './globals.css';
 import Masthead from '@/components/Masthead';
 import DarkModeScript from '@/components/DarkModeScript';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+
+const chewy = Chewy({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-chewy',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -42,7 +50,7 @@ export default function RootLayout({
         <DarkModeScript />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.svg" />
       </head>
-      <body>
+      <body className={chewy.variable}>
         <ServiceWorkerRegistration />
         <Masthead />
         <main>{children}</main>
