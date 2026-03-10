@@ -104,9 +104,8 @@ export default function HomeClient({ articles }: HomeClientProps) {
       {/* Grid */}
       {rest.length > 0 && (
         <div
-          className="grid gap-0 col-rule"
+          className="grid gap-0 col-rule grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           style={{
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '0',
           }}
         >
