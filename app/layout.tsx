@@ -50,7 +50,7 @@ export default function RootLayout({
         <DarkModeScript />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.svg" />
       </head>
-      <body className={chewy.variable}>
+      <body className={`${chewy.variable} antialiased`}>
         <ServiceWorkerRegistration />
         <Masthead />
         <main>{children}</main>
